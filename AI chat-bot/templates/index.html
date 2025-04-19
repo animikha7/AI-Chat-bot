@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI PDF CHATBOT 🤖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .chat-message {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            max-width: 75%;
+        }
+        .user-message {
+            background-color: #3b82f6;
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #e5e7eb;
+            color: black;
+            align-self: flex-start;
+        }
+        .message-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-8">
+    <div class="bg-white w-full max-w-3xl h-[85vh] shadow-2xl flex flex-col p-8 rounded-3xl border border-gray-300">
+        <h1 class="text-5xl font-extrabold text-center text-gray-900 mb-8">AI PDF CHATBOT 🤖</h1>
+        
+        <div class="flex flex-col flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50 rounded-2xl shadow-inner" id="chat-box">
+            <div class="text-gray-400 text-sm text-center">Start a conversation</div>
+        </div>
+        
+        <div class="mt-6 flex items-center gap-4">
+            <input type="file" id="pdfFile" accept=".pdf" class="hidden" onchange="uploadPDF()">
+            <label for="pdfFile" class="bg-indigo-600 text-white px-6 py-4 rounded-full cursor-pointer hover:bg-indigo-700 transition flex items-center gap-2 shadow-lg">
+                <i class="fas fa-file-pdf"></i> Upload PDF
+            </label>
+            <div class="relative flex-grow">
+                <input type="text" id="question" placeholder="Type your question..." class="w-full bg-gray-50 text-gray-900 p-4 rounded-full focus:ring-2 focus:ring-indigo-400 shadow-lg">
+            </div>
+            <button onclick="askQuestion()" class="bg-indigo-600 text-white px-6 py-4 rounded-full hover:bg-indigo-700 transition flex items-center gap-2 shadow-lg">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    <script>
+        function appendMessage(content, isUser = true) {
+            const chatBox = document.getElementById('chat-box');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const icon = document.createElement('i');
+            icon.className = `message-icon fas ${isUser ? 'fa-user-circle' : 'fa-robot'}`;
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = content;
+            
+            if (isUser) {
+                msgDiv.appendChild(textSpan);
+                msgDiv.appendChild(icon);
+            } else {
+                msgDiv.appendChild(icon);
+                msgDiv.appendChild(textSpan);
+            }
+            
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        async function uploadPDF() {
+            const fileInput = document.getElementById('pdfFile');
+            if (!fileInput.files[0]) return;
+            appendMessage('📄 PDF uploaded', true);
+            const formData = new FormData();
+            formData.append('pdf', fileInput.files[0]);
+            await fetch('/upload', { method: 'POST', body: formData });
+        }
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            if (!question.trim()) return;
+            appendMessage(question, true);
+            document.getElementById('question').value = '';
+            
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const result = await response.json();
+            appendMessage(result.answer || 'Error processing question', false);
+        }
+    </script>
+</body>
+</html>
